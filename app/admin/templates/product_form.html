@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if product else "Nuevo" }} Producto{% endblock %}
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+    <a href="/admin/products">&larr; Volver a productos</a>
+</div>
+
+<div class="card">
+    <h2 style="margin-bottom:1.5rem;">{{ "Editar Producto" if product else "Nuevo Producto" }}</h2>
+    <form method="post" enctype="multipart/form-data"
+          action="{{ '/admin/products/' ~ product.id ~ '/edit' if product else '/admin/products/new' }}">
+        <div class="form-group">
+            <label for="name">Nombre *</label>
+            <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description">{{ product.description if product and product.description else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="price">Precio *</label>
+            <input type="number" id="price" name="price" step="0.01" min="0" value="{{ product.price if product else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Categoría *</label>
+            <input type="text" id="category" name="category" value="{{ product.category if product else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="image">Imagen{{ " (dejar vacío para mantener la actual)" if product else "" }}</label>
+            {% if product and product.image_path %}
+            <div style="margin-bottom:.5rem;">
+                <img src="/uploads/{{ product.image_path }}" alt="Imagen actual" style="max-width:200px; border-radius:6px;">
+            </div>
+            {% endif %}
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        <div style="display:flex; gap:.5rem;">
+            <button type="submit" class="btn btn-primary">{{ "Guardar Cambios" if product else "Crear Producto" }}</button>
+            <a href="/admin/products" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+{% block navbar %}{% endblock %}
+{% block content %}
+<div style="max-width:400px; margin:4rem auto;">
+    <div class="card">
+        <h2 style="margin-bottom:1.5rem; text-align:center;">Iniciar Sesión</h2>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="post" action="/admin/login">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Entrar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
