@@ -1,0 +1,9 @@
+uploads/*
+!uploads/.gitkeep
+__pycache__
+*.pyc
+.git
+.gitignore
+.env
+.env.*
+*.md
