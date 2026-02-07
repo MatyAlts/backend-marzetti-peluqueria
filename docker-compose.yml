@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: peluqueria_marzetti
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - marzetti
+
+  backend:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/peluqueria_marzetti
+      JWT_SECRET: ${JWT_SECRET:-supersecretkey}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@marzetti.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - marzetti
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  marzetti:
+    name: marzetti-network
+    driver: bridge
