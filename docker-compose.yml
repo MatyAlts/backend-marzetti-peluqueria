@@ -27,6 +27,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-supersecretkey}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@marzetti.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,https://marzetti-peluqueria-frontend.326kz3.easypanel.host}
     volumes:
       - uploads_data:/app/uploads
     networks:
