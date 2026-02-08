@@ -6,10 +6,11 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from app.config import get_settings
 from app.database import engine, Base, async_session
-from app.models import Admin, Product  # noqa: F401 — ensure models are registered
+from app.models import Admin, Product, Category  # noqa: F401 — ensure models are registered
 from app.auth import hash_password
 from app.routers import products as products_router
 from app.routers import auth as auth_router
+from app.routers import categories as categories_router
 from app.admin.router import router as admin_router
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
@@ -57,5 +58,6 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Routers
 app.include_router(products_router.router)
+app.include_router(categories_router.router)
 app.include_router(auth_router.router)
 app.include_router(admin_router)

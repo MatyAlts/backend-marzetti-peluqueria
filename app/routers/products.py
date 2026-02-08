@@ -3,8 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 from app.database import get_db
-from app.models import Product, Admin
+from app.models import Product, Admin, Category
 from app.schemas import ProductResponse
 from app.auth import get_current_admin
 
@@ -20,7 +21,8 @@ def product_to_response(product: Product) -> ProductResponse:
         name=product.name,
         description=product.description,
         price=float(product.price),
-        category=product.category,
+        category=product.category_rel.name,
+        category_id=product.category_id,
         image_url=image_url,
         created_at=product.created_at,
         updated_at=product.updated_at,
@@ -29,20 +31,22 @@ def product_to_response(product: Product) -> ProductResponse:
 
 @router.get("", response_model=list[ProductResponse])
 async def list_products(
-    category: str | None = Query(None),
+    category_id: int | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Product).order_by(Product.created_at.desc())
-    if category:
-        query = query.where(Product.category == category)
+    query = select(Product).options(joinedload(Product.category_rel)).order_by(Product.created_at.desc())
+    if category_id:
+        query = query.where(Product.category_id == category_id)
     result = await db.execute(query)
-    products = result.scalars().all()
+    products = result.scalars().unique().all()
     return [product_to_response(p) for p in products]
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(
+        select(Product).options(joinedload(Product.category_rel)).where(Product.id == product_id)
+    )
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -54,11 +58,16 @@ async def create_product(
     name: str = Form(...),
     description: str | None = Form(None),
     price: float = Form(...),
-    category: str = Form(...),
+    category_id: int = Form(...),
     image: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
+    # Verify category exists
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Categoría no encontrada")
+
     image_path = None
     if image and image.filename:
         ext = os.path.splitext(image.filename)[1]
@@ -72,12 +81,12 @@ async def create_product(
         name=name,
         description=description,
         price=price,
-        category=category,
+        category_id=category_id,
         image_path=image_path,
     )
     db.add(product)
     await db.commit()
-    await db.refresh(product)
+    await db.refresh(product, ["category_rel"])
     return product_to_response(product)
 
 
@@ -87,12 +96,14 @@ async def update_product(
     name: str | None = Form(None),
     description: str | None = Form(None),
     price: float | None = Form(None),
-    category: str | None = Form(None),
+    category_id: int | None = Form(None),
     image: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(
+        select(Product).options(joinedload(Product.category_rel)).where(Product.id == product_id)
+    )
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -103,8 +114,12 @@ async def update_product(
         product.description = description
     if price is not None:
         product.price = price
-    if category is not None:
-        product.category = category
+    if category_id is not None:
+        # Verify category exists
+        result = await db.execute(select(Category).where(Category.id == category_id))
+        if not result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Categoría no encontrada")
+        product.category_id = category_id
 
     if image and image.filename:
         # Delete old image
@@ -120,7 +135,7 @@ async def update_product(
             f.write(content)
 
     await db.commit()
-    await db.refresh(product)
+    await db.refresh(product, ["category_rel"])
     return product_to_response(product)
 
 
