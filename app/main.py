@@ -40,14 +40,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Marzetti Backend", lifespan=lifespan)
 
+settings = get_settings()
+cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://cristian-marzetti-peluqueria.vercel.app",
-        "*",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
