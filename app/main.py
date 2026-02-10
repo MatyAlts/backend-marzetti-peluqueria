@@ -61,3 +61,5 @@ app.include_router(products_router.router)
 app.include_router(categories_router.router)
 app.include_router(auth_router.router)
 app.include_router(admin_router)
+
+# Reload triggered for configuration changes
